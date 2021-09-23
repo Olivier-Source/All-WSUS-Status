@@ -56,7 +56,7 @@ $MsgBody = $MsgBody + "<th bgcolor=""#B00020"">En erreur</th>"
 $MsgBody = $MsgBody + "<th bgcolor=""#e0e0e0"">Statut inconnu</th>"
 $MsgBody = $MsgBody + "</tr>"
 
-$NbOk=0; $NbRR=0; $NbPI=0; $NbTA=0; $NbErr=0; $NbNR=0; $NbNT=0
+$NbOk=0; $NbRR=0; $NbPI=0; $NbTA=0; $NbErr=0; $NbNR=0; $NbNT=0; $NbLastContact28D=0; $NbLastContact14D=0; $NbLastContact3D=0
 
 # Grosse partie : Ici on tri les ordinateurs par nom et on récupère les détails de chacun d'entre eux.
 $wsus.GetComputerTargets($CTScope) | Sort -Property FullDomainName | ForEach {
@@ -85,9 +85,9 @@ $wsus.GetComputerTargets($CTScope) | Sort -Property FullDomainName | ForEach {
     $LastContact = $_.LastReportedStatusTime # Dernière fois d'un ordinateur à fait un rapport au serveur WSUS.
     $days = [Math]::Ceiling((New-TimeSpan -Start $LastContact).TotalDays) # Nombre de jours depuis.
 
-    if ($days -gt 27) {$Color="#B00020"} # Ordinateur absent depuis trop longtemps. (28 jours)
-    elseif ($days -gt 13) {$Color="#ff8a65"} # Ordinateur ayant potentiellement un problème. (pas de rapport depuis 14 jours)
-    elseif ($days -gt 2) {$Color="#fdd835"} # Ordinateur ayant potentiellement un problème. (pas de rapport depuis 2 jours)
+    if ($days -gt 27) {$Color="#B00020"; $NbLastContact28D=$NbLastContact28D+1} # Ordinateur absent depuis trop longtemps. (28 jours)
+    elseif ($days -gt 13) {$Color="#ff8a65"; $NbLastContact14D=$NbLastContact14D+1} # Ordinateur ayant potentiellement un problème. (pas de rapport depuis 14 jours)
+    elseif ($days -gt 2) {$Color="#fdd835"; $NbLastContact3D=$NbLastContact3D+1} # Ordinateur ayant potentiellement un problème. (pas de rapport depuis 2 jours)
     else { # Ordinateur OK
         if ($intLineCounter%2) {
             $Color="#eeeeee"
@@ -137,16 +137,20 @@ $MsgBody = $MsgBody + "<table border=""0"" cellspacing=""2"" cellpadding=""2"" s
 $MsgBody = $MsgBody + "<tr>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle""></td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">OK</td>"
-$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#eeeeee"">Redémarrage requis</td>"
-$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">Prêt pour installation</td>"
-$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#eeeeee"">Téléchargement en attente</td>"
-$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">Erreur</td>"
-$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#eeeeee"">Pas de rapport</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#ff8a65"">Attente reboot</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#fb8c00"">Prêt pour installation</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#fdd835"">Téléchargement en attente</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#B00020"">En erreur</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#e0e0e0"">Pas de rapport</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">Total calculé / Total recensé</td>"
+$MsgBody = $MsgBody + "<td>&nbsp</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#fdd835"">+ de 3 jours</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#ff8a65"">+ de 14 jours</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"" style=""background-color:#B00020"">+ de 28 jours</td>"
 $MsgBody = $MsgBody + "</tr>"
 
 $MsgBody = $MsgBody + "<tr style=""background-color:#eeeeee"">"
-$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">Nombre</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">Données</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">$NbOk</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">$NbRR</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">$NbPI</td>"
@@ -154,6 +158,10 @@ $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">$NbTA</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">$NbErr</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">$NbNR</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ ($NbOk + $NbRR + $NbPI + $NbTA + $NbErr + $NbNR) +" / "+ $intLineCounter +"</td>"
+$MsgBody = $MsgBody + "<td></td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+$NbLastContact3D+"</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+$NbLastContact14D+"</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+$NbLastContact28D+"</td>"
 $MsgBody = $MsgBody + "</tr>"
 
 $MsgBody = $MsgBody + "<tr>"
@@ -165,9 +173,13 @@ $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round((
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round(($NbErr*100)/$intLineCounter,2) +"%</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round(($NbNR*100)/$intLineCounter,2) +"%</td>"
 $MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round((($NbOk + $NbRR + $NbPI + $NbTA + $NbErr + $NbNR)*100)/$intLineCounter,2) +"% / 100%</td>"
+$MsgBody = $MsgBody + "<td></td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round(($NbLastContact3D*100)/$intLineCounter,2) +"%</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round(($NbLastContact14D*100)/$intLineCounter,2) +"%</td>"
+$MsgBody = $MsgBody + "<td align=""center"" valign=""middle"">"+ [Math]::Round(($NbLastContact28D*100)/$intLineCounter,2) +"%</td>"
 $MsgBody = $MsgBody + "</tr>"
 
-$MsgBody = $MsgBody + "</table></center><br>" # On fini le tableau.
+$MsgBody = $MsgBody + "</table></center><br>" # On fini le second tableau.
 
 if ($intLineCounter -eq 0) {
     Write-Verbose ("You must run this script from as administrator to read WSUS database.") -Verbose # Affichage d'un message d'alerte pour prévenir les boulets sans droits.
@@ -186,10 +198,12 @@ $MsgBody = $MsgBody + "<li><strong>OK</strong>: Toutes les MAJ WSUS sont install
 $MsgBody = $MsgBody + "<li><strong>ERREUR</strong>: Une ou plusieurs MAJ ne sont pas correctement installés.</li>"
 $MsgBody = $MsgBody + "<li><strong>Redémarrage requis</strong>: Les installations sont faites, mais un redémarrage est nécessaire.</li>"
 $MsgBody = $MsgBody + "</ul></ul></p>"
+$MsgBody = $MsgBody + "<p>"
+$MsgBody = $MsgBody + "<span>Concernant les dates de dernier contact avec le WSUS :</span>"
 $MsgBody = $MsgBody + "Si un ordinateur ne s'est pas connecté au serveur WSUS depuis plus de 28 jours il est souligné en <font style=""background-color:#B00020"">rouge</font>.<br>"
 $MsgBody = $MsgBody + "Si un ordinateur ne s'est pas connecté au serveur WSUS depuis plus de 14 jours et jusqu'à 28 jours il est souligné en <font style=""background-color:#ff8a65"">orange</font>.<br>"
 $MsgBody = $MsgBody + "Si un ordinateur ne s'est pas connecté au serveur WSUS depuis plus de 2 jours et jusqu'à 14 jours il est souligné en <font style=""background-color:#fdd835"">jaune</font>.<br>"
-$MsgBody = $MsgBody + "<hr>"
+$MsgBody = $MsgBody + "</p><hr>"
 
 $MsgBody = $MsgBody + "<center><strong>Généré le : " + [System.DateTime]::Now + "</strong></center>" # This is a timestamp at the end of the message, taking into account the SMTP delivery delay.
 
